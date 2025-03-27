@@ -3,19 +3,38 @@ import PySimpleGUI as sg
 
 class MainWindow:
     def __init__(self):
-        self.layout = [
-            [sg.Text("Witaj w aplikacji!")],
-            [sg.Button("Ustawienia"), sg.Button(
-                "Użytkownicy"), sg.Button("O programie")],
-            [sg.Button("Wyjście")]
-        ]
-
-        self.window = sg.Window('Mateusz Szczerek', self.layout)
+        self.window = sg.Window('Mateusz Szczerek',
+                                [
+                                    [sg.Button('Informacje')],
+                                    [sg.Button('Wczytaj Dane'), sg.Button(
+                                        "Olej Wczytanie Danych")]
+                                ])
 
     def run(self):
         while True:
             event, _ = self.window.read()
             if event in (sg.WINDOW_CLOSED, "Wyjście"):
+                break
+            elif event == 'Informacje':
+                AboutWindow().run()
+
+        self.window.close()
+
+
+class AboutWindow:
+    def __init__(self):
+        self.window = sg.Window('Mateusz Szczerek',
+                                [
+                                    [sg.Text('Numer Tematu: 22')],
+                                    [sg.Text(
+                                        'Temat: Modelowanie i analiza systemu informatycznego realizującego zamianę unitermu poziomej operacji zrównoleglania na pionową operację eliminacji unitermów')],
+                                    [sg.Button('Zamknij')]
+                                ])
+
+    def run(self):
+        while True:
+            event, _ = self.window.read()
+            if event in (sg.WINDOW_CLOSED, 'Zamknij'):
                 break
 
         self.window.close()
