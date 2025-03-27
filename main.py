@@ -3,12 +3,19 @@ import PySimpleGUI as sg
 
 class MainWindow:
     def __init__(self):
-        self.window = sg.Window('Mateusz Szczerek',
+        self.uniterm_a = ''
+        self.uniterm_b = ''
+
+        self.window = sg.Window('Operacje na Unitermach',
                                 [
                                     [sg.Button('Informacje')],
                                     [sg.Button('Wczytaj Dane'), sg.Button(
                                         "Olej Wczytanie Danych")]
                                 ])
+
+    def set_uniterms(self, u_a, u_b):
+        self.uniterm_a = u_a
+        self.uniterm_b = u_b
 
     def run(self):
         while True:
@@ -16,15 +23,21 @@ class MainWindow:
             if event in (sg.WINDOW_CLOSED, "Wyjście"):
                 break
             elif event == 'Informacje':
-                AboutWindow().run()
+                AboutWindow(self).run()
+            elif event == 'Wczytaj Dane':
+                self.window.hide()
+                ReadData(self).run()
+                self.window.un_hide()
 
         self.window.close()
 
 
 class AboutWindow:
-    def __init__(self):
-        self.window = sg.Window('Mateusz Szczerek',
+    def __init__(self, main_window):
+        self.main_window = main_window
+        self.window = sg.Window('O Programie',
                                 [
+                                    [sg.Text('Autor: Mateusz Szczrek (98176)')],
                                     [sg.Text('Numer Tematu: 22')],
                                     [sg.Text(
                                         'Temat: Modelowanie i analiza systemu informatycznego realizującego zamianę unitermu poziomej operacji zrównoleglania na pionową operację eliminacji unitermów')],
@@ -38,6 +51,30 @@ class AboutWindow:
                 break
 
         self.window.close()
+
+
+class ReadData:
+    def __init__(self, main_window):
+        self.main_window = main_window
+        self.window = sg.Window('Wczytywanie Danych',
+                                [
+                                    [sg.Text('Powiedzmy że dane się wczytują')],
+                                    [sg.Input(key='-UNITERM_A-')],
+                                    [sg.Input(key='-UNITERM_B-')],
+                                    [sg.Button('Zapisz'), sg.Button('Anuluj')]
+                                ], modal=True)
+
+    def run(self):
+        while True:
+            event, values = self.window.read()
+            if event in (sg.WINDOW_CLOSED, 'Anuluj'):
+                break
+            if event == 'Zapisz':
+                self.main_window.set_uniterms(
+                    values['-UNITERM_A-'], values['-UNITERM_B-'])
+                sg.popup('Zapisano')
+
+            self.window.close()
 
 
 if __name__ == "__main__":
@@ -941,106 +978,3 @@ if __name__ == "__main__":
 #         canvas_out.delete("all")
 
 # window.close()
-
-
-# import PySimpleGUI as sg
-
-
-# class MainWindow:
-#     """Główne okno aplikacji."""
-
-#     def __init__(self):
-#         self.layout = [
-#             [sg.Text("Witaj w aplikacji!")],
-#             [sg.Button("Ustawienia"), sg.Button(
-#                 "Użytkownicy"), sg.Button("O programie")],
-#             [sg.Button("Wyjście")]
-#         ]
-#         self.window = sg.Window("Główne Okno", self.layout)
-
-#     def run(self):
-#         while True:
-#             event, _ = self.window.read()
-#             if event in (sg.WINDOW_CLOSED, "Wyjście"):
-#                 break
-#             elif event == "Ustawienia":
-#                 self.window.hide()
-#                 SettingsWindow(self).run()
-#                 self.window.un_hide()
-#             elif event == "Użytkownicy":
-#                 self.window.hide()
-#                 UserWindow(self).run()
-#                 self.window.un_hide()
-#             elif event == "O programie":
-#                 self.window.hide()
-#                 AboutWindow(self).run()
-#                 self.window.un_hide()
-
-#         self.window.close()
-
-
-# class SettingsWindow:
-#     """Okno ustawień."""
-
-#     def __init__(self, main_window):
-#         self.main_window = main_window
-#         self.layout = [
-#             [sg.Text("Ustawienia aplikacji")],
-#             [sg.Checkbox("Tryb ciemny"), sg.Checkbox("Powiadomienia")],
-#             [sg.Button("Zapisz"), sg.Button("Powrót")]
-#         ]
-#         self.window = sg.Window("Ustawienia", self.layout)
-
-#     def run(self):
-#         while True:
-#             event, _ = self.window.read()
-#             if event in (sg.WINDOW_CLOSED, "Powrót"):
-#                 break
-#             elif event == "Zapisz":
-#                 sg.popup("Ustawienia zapisane!")
-#         self.window.close()
-
-
-# class UserWindow:
-#     """Okno listy użytkowników."""
-
-#     def __init__(self, main_window):
-#         self.main_window = main_window
-#         self.layout = [
-#             [sg.Text("Lista użytkowników")],
-#             [sg.Listbox(values=["Jan Kowalski", "Anna Nowak",
-#                         "Michał Wiśniewski"], size=(30, 5))],
-#             [sg.Button("Powrót")]
-#         ]
-#         self.window = sg.Window("Użytkownicy", self.layout)
-
-#     def run(self):
-#         while True:
-#             event, _ = self.window.read()
-#             if event in (sg.WINDOW_CLOSED, "Powrót"):
-#                 break
-#         self.window.close()
-
-
-# class AboutWindow:
-#     """Okno informacji o aplikacji."""
-
-#     def __init__(self, main_window):
-#         self.main_window = main_window
-#         self.layout = [
-#             [sg.Text("Aplikacja wersja 1.0")],
-#             [sg.Text("Stworzona przez: Twoje Imię")],
-#             [sg.Button("Powrót")]
-#         ]
-#         self.window = sg.Window("O programie", self.layout)
-
-#     def run(self):
-#         while True:
-#             event, _ = self.window.read()
-#             if event in (sg.WINDOW_CLOSED, "Powrót"):
-#                 break
-#         self.window.close()
-
-
-# if __name__ == "__main__":
-#     MainWindow().run()
