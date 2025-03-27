@@ -1,23 +1,32 @@
 import PySimpleGUI as sg
+import tkinter as tk
 
 
 class MainWindow:
     def __init__(self):
         self.uniterm_a = ''
         self.uniterm_b = ''
+        self.separator = ''
+        self.window = None
 
+        self.draw_uniterm = DrawBasicUniterm(self)
+
+    def set_uniterms(self, u_a, u_b, sep):
+        self.uniterm_a = u_a
+        self.uniterm_b = u_b
+        self.separator = sep
+
+    def run(self):
         self.window = sg.Window('Operacje na Unitermach',
                                 [
                                     [sg.Button('Informacje')],
-                                    [sg.Button('Wczytaj Dane'), sg.Button(
-                                        "Olej Wczytanie Danych")]
-                                ])
+                                    [sg.Button('Wczytaj Dane')], [sg.Button(
+                                    'Rysuj Uniterm Poziomej Operacji Zrównoleglania', key='operation1')],
+                                    *self.draw_uniterm.layout
+                                ], finalize=True)
 
-    def set_uniterms(self, u_a, u_b):
-        self.uniterm_a = u_a
-        self.uniterm_b = u_b
+        self.draw_uniterm.setup_canvas()
 
-    def run(self):
         while True:
             event, _ = self.window.read()
             if event in (sg.WINDOW_CLOSED, "Wyjście"):
@@ -26,8 +35,10 @@ class MainWindow:
                 AboutWindow(self).run()
             elif event == 'Wczytaj Dane':
                 self.window.hide()
-                ReadData(self).run()
+                ReadDataFromKeyboard(self).run()
                 self.window.un_hide()
+            elif event == 'operation1':
+                self.draw_uniterm.draw_operation_1(self.uniterm_a, self.uniterm_b, self.separator)
 
         self.window.close()
 
@@ -53,14 +64,16 @@ class AboutWindow:
         self.window.close()
 
 
-class ReadData:
+class ReadDataFromKeyboard:
     def __init__(self, main_window):
         self.main_window = main_window
         self.window = sg.Window('Wczytywanie Danych',
                                 [
                                     [sg.Text('Powiedzmy że dane się wczytują')],
-                                    [sg.Input(key='-UNITERM_A-')],
-                                    [sg.Input(key='-UNITERM_B-')],
+                                    [sg.Text('Podaj wyrażenie A'), sg.Input(key='-UNITERM_A-')],
+                                    [sg.Text('Podaj wyrażenie B'), sg.Input(key='-UNITERM_B-')],
+                                    [sg.Text('Wybierz separator'),
+                                     sg.Combo([',', ';'], default_value=',', key='-SEPARATOR-')],
                                     [sg.Button('Zapisz'), sg.Button('Anuluj')]
                                 ], modal=True)
 
@@ -71,10 +84,38 @@ class ReadData:
                 break
             if event == 'Zapisz':
                 self.main_window.set_uniterms(
-                    values['-UNITERM_A-'], values['-UNITERM_B-'])
+                    values['-UNITERM_A-'], values['-UNITERM_B-'], values['-SEPARATOR-'])
                 sg.popup('Zapisano')
 
             self.window.close()
+
+
+class DrawBasicUniterm:
+    def __init__(self, main_window):
+        self.canvas = None
+        self.main_window = main_window
+        self.layout = [[sg.Canvas(size=(400, 150), key='canvas_in')]]
+
+    def setup_canvas(self):
+        canvas_elem = self.main_window.window['canvas_in']
+        tk_widget = canvas_elem.Widget
+        self.canvas = tk.Canvas(tk_widget, width=400, height=150, bg='white')
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+
+    def draw_operation_1(self, uniterm_a, uniterm_b, separator):
+        self.canvas.delete('all')
+
+        if uniterm_a == '' or uniterm_b == '' or separator == '':
+            return
+
+        full_text = f"{uniterm_a} {separator} {uniterm_b}"
+
+        text_id = self.canvas.create_text(200, 75, text=full_text, font=('Arial', 16), anchor='center')
+
+        bbox = self.canvas.bbox(text_id)
+        if bbox:
+            text_width = bbox[2] - bbox[0]
+            self.canvas.move(text_id, (200 - bbox[0] - text_width // 2), 0)
 
 
 if __name__ == "__main__":
@@ -875,7 +916,7 @@ if __name__ == "__main__":
 
 # import PySimpleGUI as sg
 # import tkinter as tk
-
+#
 # def get_two_values():
 #     layout = [
 #         [sg.Text("Podaj pierwszą wartość:"), sg.InputText(key='-POPUP1-')],
@@ -886,7 +927,7 @@ if __name__ == "__main__":
 #     event, values = window.read()
 #     window.close()
 #     return (values['-POPUP1-'], values['-POPUP2-']) if event == "OK" else (None, None)
-
+#
 # def draw_expressions(canvas, values, separator):
 #     canvas.delete("all")
 #     if len(values) != 2:
@@ -905,7 +946,7 @@ if __name__ == "__main__":
 #     canvas.create_line(line_start, start_y, line_start, start_y + vertical_line_height, width=2)
 #     canvas.create_line(line_end, start_y, line_end, start_y + vertical_line_height, width=2)
 #     canvas.create_text(start_x + text_width // 2, start_y + spacing, text=full_expression, font=("Arial", font_size), anchor="center")
-
+#
 # def draw_result(canvas, base_values, replace_values, replace_index):
 #     canvas.delete("all")
 #     if len(replace_values) != 3:
@@ -936,7 +977,7 @@ if __name__ == "__main__":
 #         new_values[replace_index] = value
 #         text = " , ".join(new_values)
 #         canvas.create_text(result_x, result_y + i * spacing, text=text, font=("Arial", font_size), anchor="w")
-
+#
 # layout = [
 #     [sg.Button("Wprowadź wartości", key="-POPUP-")],
 #     [sg.Text("Podaj trzy wartości do zamiany (rozdzielone spacją):"), sg.InputText(key='-REPLACEMENTS-')],
@@ -946,16 +987,16 @@ if __name__ == "__main__":
 #     [sg.Canvas(size=(400, 150), key="-CANVAS-IN-")],
 #     [sg.Canvas(size=(400, 150), key="-CANVAS-OUT-")]
 # ]
-
+#
 # window = sg.Window("Dynamiczne Wyrażenia", layout, finalize=True)
 # canvas_in = tk.Canvas(window["-CANVAS-IN-"].Widget, width=400, height=150, bg="white")
 # canvas_in.pack(fill=tk.BOTH, expand=True)
 # canvas_out = tk.Canvas(window["-CANVAS-OUT-"].Widget, width=400, height=150, bg="white")
 # canvas_out.pack(fill=tk.BOTH, expand=True)
-
+#
 # values_in = []
 # separator = ","
-
+#
 # while True:
 #     event, values = window.read()
 #     if event in (sg.WIN_CLOSED, "Zamknij"):
@@ -976,5 +1017,5 @@ if __name__ == "__main__":
 #         values_in = []
 #         canvas_in.delete("all")
 #         canvas_out.delete("all")
-
+#
 # window.close()
