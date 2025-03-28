@@ -21,7 +21,7 @@ class MainWindow:
                                 [
                                     [sg.Button('Informacje')],
                                     [sg.Button('Wczytaj Dane')], [sg.Button(
-                                    'Rysuj Uniterm Poziomej Operacji Zrównoleglania', key='operation1')],
+                                        'Rysuj Uniterm Poziomej Operacji Zrównoleglania', key='operation1')],
                                     *self.draw_uniterm.layout
                                 ], finalize=True)
 
@@ -38,7 +38,8 @@ class MainWindow:
                 ReadDataFromKeyboard(self).run()
                 self.window.un_hide()
             elif event == 'operation1':
-                self.draw_uniterm.draw_operation_1(self.uniterm_a, self.uniterm_b, self.separator)
+                self.draw_uniterm.draw_operation_1(
+                    self.uniterm_a, self.uniterm_b, self.separator)
 
         self.window.close()
 
@@ -70,8 +71,10 @@ class ReadDataFromKeyboard:
         self.window = sg.Window('Wczytywanie Danych',
                                 [
                                     [sg.Text('Powiedzmy że dane się wczytują')],
-                                    [sg.Text('Podaj wyrażenie A'), sg.Input(key='-UNITERM_A-')],
-                                    [sg.Text('Podaj wyrażenie B'), sg.Input(key='-UNITERM_B-')],
+                                    [sg.Text('Podaj wyrażenie A'),
+                                     sg.Input(key='-UNITERM_A-')],
+                                    [sg.Text('Podaj wyrażenie B'),
+                                     sg.Input(key='-UNITERM_B-')],
                                     [sg.Text('Wybierz separator'),
                                      sg.Combo([',', ';'], default_value=',', key='-SEPARATOR-')],
                                     [sg.Button('Zapisz'), sg.Button('Anuluj')]
@@ -110,12 +113,25 @@ class DrawBasicUniterm:
 
         full_text = f"{uniterm_a} {separator} {uniterm_b}"
 
-        text_id = self.canvas.create_text(200, 75, text=full_text, font=('Arial', 16), anchor='center')
+        text_id = self.canvas.create_text(
+            200, 75, text=full_text, font=('Arial', 16), anchor='center')
 
         bbox = self.canvas.bbox(text_id)
-        if bbox:
-            text_width = bbox[2] - bbox[0]
-            self.canvas.move(text_id, (200 - bbox[0] - text_width // 2), 0)
+        text_width = bbox[2] - bbox[0]
+        self.canvas.move(text_id, (200 - bbox[0] - text_width // 2), 0)
+
+        start_x = 400-text_width//2
+        start_y = 50
+        line_start = start_x
+        line_end = line_start+text_width
+        vertical_line_height = 10
+
+        self.canvas.create_line(line_start, start_y,
+                                line_end, start_y, width=2)
+        self.canvas.create_line(
+            line_start, start_y, line_start, start_y + vertical_line_height, width=2)
+        self.canvas.create_line(
+            line_end, start_y, line_end, start_y + vertical_line_height, width=2)
 
 
 if __name__ == "__main__":
@@ -268,6 +284,7 @@ if __name__ == "__main__":
 #     window.close()
 #     return (values['-POPUP1-'], values['-POPUP2-']) if event == "OK" else (None, None)
 
+
 # def draw_expressions(canvas, values, separator):
 #     canvas.delete("all")
 #     if len(values) != 2:
@@ -286,6 +303,7 @@ if __name__ == "__main__":
 #     canvas.create_line(line_start, start_y, line_start, start_y + vertical_line_height, width=2)
 #     canvas.create_line(line_end, start_y, line_end, start_y + vertical_line_height, width=2)
 #     canvas.create_text(start_x + text_width // 2, start_y + spacing, text=full_expression, font=("Arial", font_size), anchor="center")
+
 
 # def draw_result(canvas, base_values, replace_values, replace_index):
 #     canvas.delete("all")
