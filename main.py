@@ -1,26 +1,36 @@
 import PySimpleGUI as sg
 import tkinter as tk
+import psycopg2
 
 
 class MainWindow:
     def __init__(self):
-        self.uniterm_a = '1'
-        self.uniterm_b = '2'
-        self.separator_1 = ','
+        self.uniterm_a = ''
+        self.uniterm_b = ''
+        self.separator_1 = ''
 
-        self.uniterm_c = '32'
-        self.uniterm_d = '42'
-        self.uniterm_e = '52'
-        self.separator_2 = ';'
+        self.uniterm_c = ''
+        self.uniterm_d = ''
+        self.uniterm_e = ''
+        self.separator_2 = ''
 
         self.window = None
 
         self.draw_uniterm = DrawBasicUniterm(self)
 
+        self.combo_box_side_values = {
+            'Lewy Uniterm': 'left',
+            'Prawy Uniterm': 'right'
+        }
+
     def set_uniterms_1(self, u_a, u_b, sep):
         self.uniterm_a = u_a
         self.uniterm_b = u_b
         self.separator_1 = sep
+
+        self.window['ua'].update(f'Uniterm A: {self.uniterm_a}')
+        self.window['ub'].update(f'Uniterm B: {self.uniterm_b}')
+        self.window['sep1'].update(f'Separator: {self.separator_1}')
 
     def set_uniterms_2(self, u_c, u_d, u_e, sep):
         self.uniterm_c = u_c
@@ -28,26 +38,48 @@ class MainWindow:
         self.uniterm_e = u_e
         self.separator_2 = sep
 
+        self.window['uc'].update(f'Uniterm A: {self.uniterm_c}')
+        self.window['ud'].update(f'Uniterm B: {self.uniterm_d}')
+        self.window['ue'].update(f'Uniterm C: {self.uniterm_e}')
+        self.window['sep2'].update(f'Separator: {self.separator_2}')
+
     def run(self):
         self.window = sg.Window('Operacje na Unitermach',
                                 [
-                                    [sg.Button('Informacje')],
+                                    [sg.Button('Informacje o Programie', key='info')],
+                                    [sg.HorizontalSeparator()],
+                                    [sg.Text('Wartości Unitermu Poziomej Operacji Zrównoleglania')],
+                                    [sg.Text(f'Uniterm A: {self.uniterm_a}',key='ua'), sg.Text(f'Uniterm B: {self.uniterm_b}',key='ub'),
+                                     sg.Text(f'Separator: {self.separator_1}',key='sep1')],
+                                    [sg.Text('Wartości Unitermu Pionowej Operacji Eliminacji')],
+                                    [sg.Text(f'Uniterm A: {self.uniterm_c}',key='uc'), sg.Text(f'Uniterm B: {self.uniterm_d}',key='ud'),
+                                     sg.Text(f'Uniterm C: {self.uniterm_e}',key='ue'),
+                                     sg.Text(f'Separator: {self.separator_2}',key='sep2')],
+                                    [sg.HorizontalSeparator()],
+                                    [sg.Text('Wczytywanie Danych z Klawiatury')],
                                     [sg.Button('Wczytaj Dane Unitermu Poziomej Operacji Zrównoleglania', key='read1')],
                                     [sg.Button('Wczytaj Dane Unitermu Pionowej Operacji Eliminacji', key='read2')],
+                                    [sg.HorizontalSeparator()],
+                                    [sg.Text('Wczytywanie Danych z Bazy PostgreSQL')],
+                                    [sg.HorizontalSeparator()],
+                                    [sg.Text('Rysowanie Unitermów')],
                                     [sg.Button('Rysuj Uniterm Poziomej Operacji Zrównoleglania', key='draw1')],
                                     [sg.Button('Rysuj Uniterm Pionowej Operacji Eliminacji', key='draw2')],
-                                    [sg.Button('Rysuj Finalny Rezultat', key='draw3')],
+                                    [sg.Combo(list(self.combo_box_side_values.keys()), key='side',
+                                              default_value='Lewy Uniterm'),
+                                     sg.Button('Rysuj Finalny Rezultat', key='draw3')],
                                     *self.draw_uniterm.layout
                                 ], finalize=True)
 
         self.draw_uniterm.setup_canvas()
 
         while True:
-            event, _ = self.window.read()
+            event, values = self.window.read()
             if event in (sg.WINDOW_CLOSED, "Wyjście"):
                 break
-            elif event == 'Informacje':
+            elif event == 'info':
                 AboutWindow(self).run()
+                DatabaseConnection()
             elif event == 'read1':
                 self.window.hide()
                 ReadDataFromKeyboardForFirstUniterm(self).run()
@@ -68,7 +100,7 @@ class MainWindow:
                 self.draw_uniterm.canvas.delete('all')
                 self.draw_uniterm.draw_operation_3(
                     self.uniterm_a, self.uniterm_b, self.uniterm_c, self.uniterm_d, self.uniterm_e, self.separator_1,
-                    self.separator_2, 'left')
+                    self.separator_2, self.combo_box_side_values.get(values['side']))
 
         self.window.close()
 
@@ -151,15 +183,15 @@ class DrawBasicUniterm:
     def __init__(self, main_window):
         self.canvas = None
         self.main_window = main_window
-        self.layout = [[sg.Canvas(size=(400, 300), key='canvas_in')]]
+        self.layout = [[sg.Canvas(size=(400, 300), key='canvas')]]
 
     def setup_canvas(self):
-        canvas_elem = self.main_window.window['canvas_in']
+        canvas_elem = self.main_window.window['canvas']
         tk_widget = canvas_elem.Widget
         self.canvas = tk.Canvas(tk_widget, width=400, height=300, bg='white')
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-    def draw_operation_1(self, uniterm_a, uniterm_b, separator_1,x=200,y=100):
+    def draw_operation_1(self, uniterm_a, uniterm_b, separator_1, x=200, y=100):
         if uniterm_a == '' or uniterm_b == '' or separator_1 == '':
             return
 
@@ -181,7 +213,7 @@ class DrawBasicUniterm:
         self.canvas.create_line(line_start, start_y, line_start, start_y + vertical_line_height, width=2)
         self.canvas.create_line(line_end, start_y, line_end, start_y + vertical_line_height, width=2)
 
-    def draw_operation_2(self, uniterm_c, uniterm_d, uniterm_e, separator_2,x=200,y=100):
+    def draw_operation_2(self, uniterm_c, uniterm_d, uniterm_e, separator_2, x=200, y=100):
         if uniterm_c == '' or uniterm_d == '' or uniterm_e == '' or separator_2 == '':
             return
 
@@ -206,20 +238,39 @@ class DrawBasicUniterm:
                                     anchor="w")
 
     def draw_operation_3(self, uniterm_a, uniterm_b, uniterm_c, uniterm_d, uniterm_e, separator_1, separator_2, side):
-        self.canvas.delete('all')
-
-        if uniterm_a == '' or uniterm_b == '' or uniterm_c == '' or uniterm_d == '' or uniterm_e == '' or separator_1 == '' or separator_2 == '':
-            return
-
-        x = 200
-        y = 100
-
         if side == 'left':
             self.draw_operation_1(' ', uniterm_b, separator_1)
             self.draw_operation_2(uniterm_c, uniterm_d, uniterm_e, separator_2, 170, 100)
         elif side == 'right':
             self.draw_operation_1(uniterm_a, ' ', separator_1)
             self.draw_operation_2(uniterm_c, uniterm_d, uniterm_e, separator_2, 225, 100)
+
+
+class DatabaseConnection:
+    def __init__(self):
+        self.conn = psycopg2.connect(dbname="mydatabase", user="postgres", password="password", host="localhost",
+                                     port="5432")
+        self.cur = self.conn.cursor()
+
+        self.cur.execute('CREATE TABLE IF NOT EXIST data ('
+                         'uniterm_a VARCHAR(255)'
+                         'uniterm_b VARCHAR(255)'
+                         'uniterm_c VARCHAR(255)'
+                         'uniterm_d VARCHAR(255)'
+                         'uniterm_e VARCHAR(255)'
+                         'separator_1 VARCHAR(255)'
+                         'separator_2 VARCHAR(255)'
+                         ')')
+        self.conn.commit()
+
+        self.cur.close()
+        self.conn.close()
+
+    def get_values_from_database(self):
+        self.cur.execute('SELECT * FROM data')
+        rows = self.cur.fetchall()
+        for row in rows:
+            print(row)
 
 
 if __name__ == "__main__":
