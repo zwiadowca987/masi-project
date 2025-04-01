@@ -1,6 +1,12 @@
 import PySimpleGUI as sg
 import tkinter as tk
 import psycopg2
+import random
+import string
+
+
+def random_input():
+    return ''.join(random.choices(string.digits + string.ascii_lowercase, k=random.choice([1, 2])))
 
 
 class MainWindow:
@@ -44,18 +50,21 @@ class MainWindow:
         self.window['sep2'].update(f'Separator: {self.separator_2}')
 
     def run(self):
-        self.window = sg.Window('Operacje na Unitermach',
+        # WHOLE INTERFACE VERTICAL
+        """self.window = sg.Window('Operacje na Unitermach',
                                 [
                                     [sg.Button(
                                         'Informacje o Programie', key='info')],
                                     [sg.HorizontalSeparator()],
                                     [sg.Text(
                                         'Wartości Unitermu Poziomej Operacji Zrównoleglania')],
-                                    [sg.Text(f'Uniterm A: {self.uniterm_a}', key='ua'), sg.Text(f'Uniterm B: {self.uniterm_b}', key='ub'),
+                                    [sg.Text(f'Uniterm A: {self.uniterm_a}', key='ua'),
+                                     sg.Text(f'Uniterm B: {self.uniterm_b}', key='ub'),
                                      sg.Text(f'Separator: {self.separator_1}', key='sep1')],
                                     [sg.Text(
                                         'Wartości Unitermu Pionowej Operacji Eliminacji')],
-                                    [sg.Text(f'Uniterm A: {self.uniterm_c}', key='uc'), sg.Text(f'Uniterm B: {self.uniterm_d}', key='ud'),
+                                    [sg.Text(f'Uniterm A: {self.uniterm_c}', key='uc'),
+                                     sg.Text(f'Uniterm B: {self.uniterm_d}', key='ud'),
                                      sg.Text(
                                          f'Uniterm C: {self.uniterm_e}', key='ue'),
                                      sg.Text(f'Separator: {self.separator_2}', key='sep2')],
@@ -73,6 +82,9 @@ class MainWindow:
                                     [sg.Button(
                                         'Zapisz Dane Unitermów do Bazy Danych', key='save')],
                                     [sg.HorizontalSeparator()],
+                                    [sg.Text('Losowanie Wartości Unitermów')],
+                                    [sg.Button('Losuj', key='random')],
+                                    [sg.HorizontalSeparator()],
                                     [sg.Text('Rysowanie Unitermów')],
                                     [sg.Button(
                                         'Rysuj Uniterm Poziomej Operacji Zrównoleglania', key='draw1')],
@@ -82,6 +94,46 @@ class MainWindow:
                                               default_value='Lewy Uniterm'),
                                      sg.Button('Rysuj Finalny Rezultat', key='draw3')],
                                     *self.draw_uniterm.layout
+                                ], finalize=True)"""
+
+        # INTERFACE DIVIDED INTO TWO SECTIONS SIDE BY SIDE
+        self.window = sg.Window('Operacje na Unitermach',
+                                [
+                                    [
+                                        sg.Column([
+                                            [sg.Button('Informacje o Programie', key='info')],
+                                            [sg.HorizontalSeparator()],
+                                            [sg.Text('Wartości Unitermu Poziomej Operacji Zrównoleglania')],
+                                            [sg.Text(f'Uniterm A: {self.uniterm_a}', key='ua'),
+                                             sg.Text(f'Uniterm B: {self.uniterm_b}', key='ub'),
+                                             sg.Text(f'Separator: {self.separator_1}', key='sep1')],
+                                            [sg.Text('Wartości Unitermu Pionowej Operacji Eliminacji')],
+                                            [sg.Text(f'Uniterm A: {self.uniterm_c}', key='uc'),
+                                             sg.Text(f'Uniterm B: {self.uniterm_d}', key='ud'),
+                                             sg.Text(f'Uniterm C: {self.uniterm_e}', key='ue'),
+                                             sg.Text(f'Separator: {self.separator_2}', key='sep2')],
+                                            [sg.HorizontalSeparator()],
+                                            [sg.Text('Wczytywanie Danych z Klawiatury')],
+                                            [sg.Button('Wczytaj Dane Unitermu Poziomej Operacji Zrównoleglania', key='read1')],
+                                            [sg.Button('Wczytaj Dane Unitermu Pionowej Operacji Eliminacji', key='read2')],
+                                            [sg.HorizontalSeparator()],
+                                            [sg.Text('Baza Danych PostgreSQL')],
+                                            [sg.Button('Wczytaj Dane Unitermów z Bazy Danych', key='read3')],
+                                            [sg.Button('Zapisz Dane Unitermów do Bazy Danych', key='save')],
+                                            [sg.HorizontalSeparator()],
+                                            [sg.Text('Losowanie Wartości Unitermów')],
+                                            [sg.Button('Losuj', key='random')],
+                                        ]),
+                                        sg.VerticalSeparator(),
+                                        sg.Column([
+                                            [sg.Text('Rysowanie Unitermów')],
+                                            [sg.Button('Rysuj Uniterm Poziomej Operacji Zrównoleglania', key='draw1')],
+                                            [sg.Button('Rysuj Uniterm Pionowej Operacji Eliminacji', key='draw2')],
+                                            [sg.Combo(list(self.combo_box_side_values.keys()), key='side', default_value='Lewy Uniterm', readonly=True),
+                                             sg.Button('Rysuj Finalny Rezultat', key='draw3')],
+                                            *self.draw_uniterm.layout
+                                        ])
+                                    ]
                                 ], finalize=True)
 
         self.draw_uniterm.setup_canvas()
@@ -103,23 +155,39 @@ class MainWindow:
                 ReadDataFromKeyboardForSecondUniterm(self).run()
                 self.window.un_hide()
             elif event == 'read3':
-                DatabaseConnection().get_values_from_database()
+                DatabaseConnection().get_values_from_database(self)
             elif event == 'save':
-                DatabaseConnection().save_values_into_database(self.uniterm_a, self.uniterm_b,
-                                                               self.uniterm_c, self.uniterm_d, self.uniterm_e, self.separator_1, self.separator_2)
+                DatabaseConnection().save_values_into_database(self.uniterm_a,
+                                                               self.uniterm_b,
+                                                               self.uniterm_c,
+                                                               self.uniterm_d,
+                                                               self.uniterm_e,
+                                                               self.separator_1,
+                                                               self.separator_2)
+            elif event == 'random':
+                self.set_uniterms_1(random_input(), random_input(), random.choice([';', ',']))
+                self.set_uniterms_2(random_input(), random_input(), random_input(), random.choice([';', ',']))
             elif event == 'draw1':
                 self.draw_uniterm.canvas.delete('all')
-                self.draw_uniterm.draw_operation_1(
-                    self.uniterm_a, self.uniterm_b, self.separator_1)
+                self.draw_uniterm.draw_operation_1(self.uniterm_a,
+                                                   self.uniterm_b,
+                                                   self.separator_1)
             elif event == 'draw2':
                 self.draw_uniterm.canvas.delete('all')
-                self.draw_uniterm.draw_operation_2(
-                    self.uniterm_c, self.uniterm_d, self.uniterm_e, self.separator_2)
+                self.draw_uniterm.draw_operation_2(self.uniterm_c,
+                                                   self.uniterm_d,
+                                                   self.uniterm_e,
+                                                   self.separator_2)
             elif event == 'draw3':
                 self.draw_uniterm.canvas.delete('all')
-                self.draw_uniterm.draw_operation_3(
-                    self.uniterm_a, self.uniterm_b, self.uniterm_c, self.uniterm_d, self.uniterm_e, self.separator_1,
-                    self.separator_2, self.combo_box_side_values.get(values['side']))
+                self.draw_uniterm.draw_operation_3(self.uniterm_a,
+                                                   self.uniterm_b,
+                                                   self.uniterm_c,
+                                                   self.uniterm_d,
+                                                   self.uniterm_e,
+                                                   self.separator_1,
+                                                   self.separator_2,
+                                                   self.combo_box_side_values.get(values['side']))
 
         DatabaseConnection().close_connection()
         self.window.close()
@@ -299,19 +367,21 @@ class DatabaseConnection:
         self.cur.close()
         self.conn.close()
 
-    def get_values_from_database(self):
+    def get_values_from_database(self, main_window):
         self.cur.execute('SELECT * FROM data')
         row = self.cur.fetchall()
         if row:
-            MainWindow().set_uniterms_1(row[0][0], row[0][1], row[0][5])
-            MainWindow().set_uniterms_2(
+            main_window.set_uniterms_1(row[0][0], row[0][1], row[0][5])
+            main_window.set_uniterms_2(
                 row[0][2], row[0][3], row[0][4], row[0][6])
 
     def save_values_into_database(self, uniterm_a, uniterm_b, uniterm_c, uniterm_d, uniterm_e, separator_1, separator_2):
         self.cur.execute('DELETE FROM data')
-        self.cur.execute('INSERT INTO data (uniterm_a, uniterm_b, uniterm_c, uniterm_d, uniterm_e, separator_1, separator_2)'
-                         'VALUES (%s, %s, %s, %s, %s, %s, %s)',
-                         (uniterm_a, uniterm_b, uniterm_c, uniterm_d, uniterm_e, separator_1, separator_2))
+        self.cur.execute(
+            'INSERT INTO data '
+            '(uniterm_a, uniterm_b, uniterm_c, uniterm_d, uniterm_e, separator_1, separator_2) '
+            'VALUES (%s, %s, %s, %s, %s, %s, %s)',
+            (uniterm_a, uniterm_b, uniterm_c, uniterm_d, uniterm_e, separator_1, separator_2))
         self.conn.commit()
 
 
